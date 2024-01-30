@@ -64,7 +64,7 @@ while run:
         fruit.x = random.randint(1, width-fruit.x)
         fruit.y = 0
         health -= 1
-        health_text = font.render(f'Lives: {health}', True, (255, 255, 255))
+        health_text = font.render(f'Health: {health}', True, (255, 255, 255))
 
     if fruit.colliderect(bowl):
         score += 1
@@ -74,8 +74,10 @@ while run:
 
     if health <= 0:
         game_over()
+        score = 0
         health = 3
-        health_text = font.render(f'Lives: {health}', True, (255, 255, 255))
+        score_text = font.render(f'Score: {score}', True, (255, 255, 255))
+        health_text = font.render(f'Health: {health}', True, (255, 255, 255))
 
     fruit.y = fruit.y + 5
 
