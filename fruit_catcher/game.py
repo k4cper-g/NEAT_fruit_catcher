@@ -28,4 +28,3 @@ class Game:
     def draw_score(self):
         score_text = self.font.render(f'Score: {self.score}', True, (255, 255, 255))
         self.window.blit(score_text, (545, 20))
-        
