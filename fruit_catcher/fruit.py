@@ -3,6 +3,7 @@ import random
 
 
 class Fruit:
+    # com
     width = 25
     height = 25
     velocity = 2

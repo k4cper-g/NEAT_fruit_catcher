@@ -9,6 +9,7 @@ pygame.font.init()
 
 
 class Game:
+    # com
     font = pygame.font.SysFont("comicsans", 18)
 
     def __init__(self, window, width, height):

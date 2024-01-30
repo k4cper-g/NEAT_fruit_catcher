@@ -3,6 +3,7 @@ import random
 
 
 class Bowl:
+    # com
     velocity = 5
     width = 200
     height = 20
