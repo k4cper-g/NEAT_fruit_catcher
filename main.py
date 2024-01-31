@@ -97,7 +97,7 @@ class FruitCatchGame:
 def run_game_as_ai(config):
     window = pygame.display.set_mode((WIDTH, HEIGHT))
 
-    with open("best.pickle", "rb") as f:
+    with open("best_network.pickle", "rb") as f:
         winner = pickle.load(f)
 
     game = FruitCatchGame(window, WIDTH, HEIGHT)
@@ -124,7 +124,7 @@ def run_neat(config):
 
     winner = p.run(eval_genomes, 1)
 
-    with open("best.pickle", "wb") as f:
+    with open("best_network.pickle", "wb") as f:
         pickle.dump(winner, f)
 
 
