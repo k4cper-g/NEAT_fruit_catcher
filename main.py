@@ -1,102 +1,142 @@
-import neat
+from assets.game import Game
 import pygame
-import random
+import neat
+import os
+import pickle
+
+WIDTH, HEIGHT = 600, 600
+TICK_RATE = 1000
 
 
-def game_over():
-    game_font = pygame.font.SysFont('comicsans', 32)
-    game_text = game_font.render('Game over!', True, (255, 255, 255))
-    # set the center of the rectangular object.
-    game_text_rect = game_text.get_rect()
-    game_text_rect.center = (width // 2, height // 2)
-    pygame.time.wait(1000)
+class FruitCatchGame:
+    def __init__(self, window, width, height):
+        self.game = Game(window, width, height)
+        self.bowl = self.game.bowl
+        self.fruit = self.game.fruit
+
+    def test_ai(self, genome, config):
+        net = neat.nn.FeedForwardNetwork.create(genome, config)
+
+        run = True
+        clock = pygame.time.Clock()
+        while run:
+            clock.tick(TICK_RATE)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+                    break
+
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_a]:
+                self.game.move_bowl(True)
+            if keys[pygame.K_d]:
+                self.game.move_bowl(False)
+
+            output = net.activate(
+                (self.bowl.obj.x, self.fruit.obj.y, abs(self.bowl.obj.center[0] - self.fruit.obj.center[0])))
+
+            # print(output)
+
+            decision = output.index(max(output))
+
+            if decision == 0:
+                self.game.move_bowl(True)
+            else:
+                self.game.move_bowl(False)
+
+            self.game.loop()
+            self.game.draw()
+
+            if self.game.miss > 0:
+                self.game.draw_game_over()
+                pygame.time.wait(1000)
+                self.game.reset()
+
+            pygame.display.update()
+
+        pygame.quit()
+
+    def train_ai(self, genome, config):
+        network = neat.nn.FeedForwardNetwork.create(genome, config)
+
+        run = True
+        while run:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    quit()
+
+            output = network.activate(
+                (self.bowl.obj.x, self.fruit.obj.y, abs(self.bowl.obj.center[0] - self.fruit.obj.center[0])))
+
+            # print(output)
+
+            decision = output.index(max(output))
+
+            if decision == 0:
+                self.game.move_bowl(True)
+            else:
+                self.game.move_bowl(False)
+
+            game_score = self.game.score
+            game_miss = self.game.miss
+
+            self.game.loop()
+            self.game.draw()
+            self.game.draw_score()
+            pygame.display.update()
+
+            if game_miss >= 3 or game_score > 50:
+                self.calculate_fitness(genome, game_score)
+                break
+
+    @staticmethod
+    def calculate_fitness(genome, game_score):
+        genome.fitness += game_score
 
 
+def run_game_as_ai(config):
+    window = pygame.display.set_mode((WIDTH, HEIGHT))
 
-pygame.init()
-pygame.font.init()
+    with open("best.pickle", "rb") as f:
+        winner = pickle.load(f)
 
-width, height = 600, 600
+    game = FruitCatchGame(window, WIDTH, HEIGHT)
 
-screen = pygame.display.set_mode((width, height))
+    game.test_ai(winner, config)
 
-velocity = 5
 
-run = True
+def eval_genomes(genomes, config):
+    window = pygame.display.set_mode((WIDTH, HEIGHT))
 
-bowl = pygame.Rect(200, 550, 200, 25)
+    for i, (genome_id, genome) in enumerate(genomes):
+        genome.fitness = 0
+        game = FruitCatchGame(window, WIDTH, HEIGHT)
+        game.train_ai(genome, config)
 
-rand = random.randint(1, width)
 
-fruit = pygame.Rect(rand, 0, 25, 25)
+def run_neat(config):
+    p = neat.Checkpointer.restore_checkpoint('neat-checkpoint-35')  # run from checkpoint
+    # p = neat.Population(config)  # run anew
+    p.add_reporter(neat.StdOutReporter(True))
+    stats = neat.StatisticsReporter()
+    p.add_reporter(stats)
+    p.add_reporter(neat.Checkpointer(1))
 
-health = 3
+    winner = p.run(eval_genomes, 1)
 
-score = 0
+    with open("best.pickle", "wb") as f:
+        pickle.dump(winner, f)
 
-font = pygame.font.SysFont('comicsans', 18)
 
-health_text = font.render(f'Health: {health}', True, (255, 255, 255))
-health_text_rect = health_text.get_rect()
-health_text_rect.center = (60, 20)
+if __name__ == "__main__":
+    local_dir = os.path.dirname(__file__)
+    config_path = os.path.join(local_dir, "config.ini")
+    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                         neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                         config_path)
 
-score_text = font.render(f'Score: {score}', True, (255, 255, 255))
-score_text_rect = score_text.get_rect()
-score_text_rect.center = (545, 20)
+    # to train ai
+    # run_neat(config)
 
-while run:
-    pygame.time.delay(10)
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-
-    keys = pygame.key.get_pressed()
-
-    if keys[pygame.K_a] and bowl.x > 0:
-        bowl.x -= velocity
-
-    if keys[pygame.K_d] and bowl.x < width - bowl.width:
-        bowl.x += velocity
-
-    if fruit.y >= height:
-        fruit.x = random.randint(1, width-fruit.x)
-        fruit.y = 0
-        health -= 1
-        health_text = font.render(f'Health: {health}', True, (255, 255, 255))
-
-    if fruit.colliderect(bowl):
-        score += 1
-        fruit.x = random.randint(1, width-fruit.x)
-        fruit.y = 0
-        score_text = font.render(f'Score: {score}', True, (255, 255, 255))
-
-    if health <= 0:
-        game_over()
-        score = 0
-        health = 3
-        score_text = font.render(f'Score: {score}', True, (255, 255, 255))
-        health_text = font.render(f'Health: {health}', True, (255, 255, 255))
-
-    fruit.y = fruit.y + 1
-
-    screen.fill((0, 0, 0))
-
-    print(abs((bowl.center[0] - fruit.center[0]) - fruit.y))
-
-    # print(bowl.right)
-
-    # print(bowl.x)
-
-    # print(bowl.center[0])
-
-    if fruit.x >= width:
-        print(fruit.x)
-
-    screen.blit(health_text, health_text_rect)
-    screen.blit(score_text, score_text_rect)
-    pygame.draw.rect(screen, (255, 255, 255), (fruit.x, fruit.y, fruit.width, fruit.height))
-    pygame.draw.rect(screen, (255, 255, 255), (bowl.x, bowl.y, bowl.width, bowl.height))
-    pygame.display.update()
-
-pygame.quit()
+    # to test ai
+    run_game_as_ai(config)
