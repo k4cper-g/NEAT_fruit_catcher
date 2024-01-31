@@ -5,7 +5,7 @@ import random
 class Fruit:
     width = 25
     height = 25
-    velocity = 5
+    velocity = 2
 
     def __init__(self, x, y):
         self.obj = pygame.Rect(x, y, self.width, self.height)

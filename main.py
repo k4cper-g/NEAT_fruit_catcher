@@ -9,9 +9,8 @@ def game_over():
     # set the center of the rectangular object.
     game_text_rect = game_text.get_rect()
     game_text_rect.center = (width // 2, height // 2)
-    screen.blit(game_text, game_text_rect)
-    pygame.display.update()
     pygame.time.wait(1000)
+
 
 
 pygame.init()
@@ -79,9 +78,20 @@ while run:
         score_text = font.render(f'Score: {score}', True, (255, 255, 255))
         health_text = font.render(f'Health: {health}', True, (255, 255, 255))
 
-    fruit.y = fruit.y + 5
+    fruit.y = fruit.y + 1
 
     screen.fill((0, 0, 0))
+
+    print(abs((bowl.center[0] - fruit.center[0]) - fruit.y))
+
+    # print(bowl.right)
+
+    # print(bowl.x)
+
+    # print(bowl.center[0])
+
+    if fruit.x >= width:
+        print(fruit.x)
 
     screen.blit(health_text, health_text_rect)
     screen.blit(score_text, score_text_rect)
