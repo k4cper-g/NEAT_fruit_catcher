@@ -115,12 +115,15 @@ def eval_genomes(genomes, config):
 
 
 def run_neat(config):
-    p = neat.Checkpointer.restore_checkpoint('neat-checkpoint-35')  # run from checkpoint
+    p = neat.Checkpointer.restore_checkpoint('checkpoints/neat-checkpoint-35')  # run from checkpoint
     # p = neat.Population(config)  # run anew
     p.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
-    p.add_reporter(neat.Checkpointer(1))
+    # Create the checkpoints folder if it doesn't exist
+    if not os.path.exists("checkpoints"):
+        os.makedirs("checkpoints")
+    p.add_reporter(neat.Checkpointer(1, filename_prefix="checkpoints/neat-checkpoint-"))
 
     winner = p.run(eval_genomes, 1)
 
